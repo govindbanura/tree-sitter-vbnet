@@ -1,0 +1,146 @@
+==================
+Variable Declarations
+==================
+
+Dim x As Integer
+Dim y As String = "Hello"
+Dim z = 123
+Static a, b As Double
+
+---
+
+==================
+Class and Member Declarations
+==================
+
+Public Class MyClass
+    Inherits System.Object
+    Implements IDisposable
+
+    Private _field As Integer
+
+    Public Event MyEvent(sender As Object, e As EventArgs)
+
+    Public Sub New()
+        _field = 0
+    End Sub
+
+    Public Function GetValue() As Integer
+        Return _field
+    End Function
+
+    Public Property Value As Integer
+        Get
+            Return _field
+        End Get
+        Set(value As Integer)
+            _field = value
+        End Set
+    End Property
+End Class
+
+---
+
+==================
+Control Flow: If Statement
+==================
+
+If x > 10 Then
+    Console.WriteLine("Greater")
+ElseIf x < 10 Then
+    Console.WriteLine("Less")
+Else
+    Console.WriteLine("Equal")
+End If
+
+---
+
+==================
+Control Flow: Select Case
+==================
+
+Select Case x
+    Case 1
+        ' Do something
+    Case 2, 3
+        ' Do something else
+    Case Is > 10
+        ' Do another thing
+    Case Else
+        ' Default
+End Select
+
+---
+
+==================
+Control Flow: Loops
+==================
+
+For i As Integer = 1 To 10 Step 2
+    ' Loop
+Next i
+
+For Each item In collection
+    ' Loop
+Next
+
+Do While x < 100
+    x += 1
+Loop
+
+Do
+    x -= 1
+Loop Until x = 0
+
+---
+
+==================
+Expressions and Operators
+==================
+
+Dim a = 1 + 2 * 3 ^ 4
+Dim b = (1 + 2) * 3
+Dim c = -a
+Dim d = x IsNot Nothing AndAlso y > 0
+Dim e = If(a > b, a, b)
+
+---
+
+==================
+Attributes and Line Continuations
+==================
+
+<Serializable()> _
+Public Class AnotherClass
+    <Obsolete("Use NewMethod instead.")>
+    Public Sub OldMethod()
+    End Sub
+End Class
+
+---
+
+==================
+Lambda Expressions
+==================
+
+Dim myFunc = Function(x As Integer) x * 2
+Dim myAction = Sub(s As String) Console.WriteLine(s)
+
+Dim multiLine = Function(x As Integer)
+                    Dim result = x + 1
+                    Return result
+                End Function
+
+---
+
+==================
+Error Handling
+==================
+
+Try
+    ' Risky code
+Catch ex As Exception When ex.Message.Contains("Error")
+    ' Handle specific error
+Finally
+    ' Cleanup
+End Try
