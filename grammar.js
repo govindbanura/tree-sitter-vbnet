@@ -21,12 +21,13 @@ const PRECEDENCE = {
 
 module.exports = grammar({
   name: "vbnet",
-  extras: ($) => [
-    $.preprocessor_directive,
-    $.comment,
-    /[ \t\v\f]+/,
-    /_[ \t]*\r?\n/  // Updated to allow spaces between _ and newline
-  ],
+  extras: $ => [
+  $.comment,
+  $.preprocessor_directive,
+  /[ \t\v\f]+/,
+  /\r?\n/,             // <- Support newlines (for implicit continuation)
+  /_[ \t]*\r?\n/,      // <- Explicit line continuation
+],
   supertypes: ($) => [
     $._declaration,
     $._type_member_declaration,
