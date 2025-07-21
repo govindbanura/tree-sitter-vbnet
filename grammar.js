@@ -22,9 +22,9 @@ const PRECEDENCE = {
 module.exports = grammar({
   name: "vbnet",
   extras: ($) => [
-    $.preprocessor_directive, 
-    $.comment, 
-    /[ \t\v\f]+/, 
+    $.preprocessor_directive,
+    $.comment,
+    /[ \t\v\f]+/,
     /_[ \t]*\r?\n/  // Updated to allow spaces between _ and newline
   ],
   supertypes: ($) => [
@@ -427,7 +427,8 @@ module.exports = grammar({
             precedence,
             seq(
               field("left", $._expression),
-              field("operator", op),
+              field("operator", seq(op, optional(/_[ \t]*\r?\n/))),
+              // Accept optional extras (comments, line continuation) here
               field("right", $._expression)
             )
           )
@@ -720,7 +721,7 @@ module.exports = grammar({
         field("type", $._type)
       ),
     as_clause: ($) => seq(ci("As"), field("declared_type", $._type)),
-    
+
     implements_member_clause: ($) =>
       seq(ci("Implements"), commaSep1($._name_reference)),
 
@@ -937,7 +938,7 @@ module.exports = grammar({
         )),
         optional(seq("=", field("initializer", $._expression)))
       ),
-    
+
 
     field_declaration: ($) =>
       prec.dynamic(-100, seq(
