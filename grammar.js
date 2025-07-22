@@ -99,6 +99,8 @@ module.exports = grammar({
     [$.simple_name, $.variable_declarator],
     [$.simple_name, $.generic_name, $.variable_declarator],
     [$.generic_name, $.variable_declarator],
+    [$._statement, $.with_statement],
+    [$._type, $.as_clause],
   ],
 
   word: ($) => $._identifier_token,
@@ -680,16 +682,18 @@ module.exports = grammar({
       ),
     global_qualified_name: ($) =>
       seq(ci("Global"), ".", field("name", $._name_reference)),
+
     _type: ($) =>
       choice(
+        prec(2, $.nullable_type),  // Give nullable_type higher precedence
         $.simple_name,
         $.qualified_name,
         $.generic_name,
         $.predefined_type,
         $.array_type,
-        $.nullable_type,
         $.tuple_type
       ),
+
     predefined_type: ($) =>
       choice(
         ci("Boolean"),
@@ -716,9 +720,14 @@ module.exports = grammar({
       seq(field("element_type", $._type), $.array_rank_specifier),
     array_rank_specifier: ($) => seq("(", repeat(","), ")"),
 
-    nullable_type: ($) => prec.left(15, seq(
-      field("type", $._type),
-      token.immediate("?")  // Use token.immediate to ensure ? is attached
+    nullable_type: ($) => prec.left(20, seq(
+      field("type", choice(
+        $.predefined_type,
+        $.simple_name,
+        $.qualified_name,
+        $.generic_name  // Also allow generic types to be nullable
+      )),
+      token.immediate("?")
     )),
 
     tuple_type: ($) => seq("(", commaSep2($.tuple_element), ")"),
@@ -727,7 +736,11 @@ module.exports = grammar({
         optional(seq(field("name", $.identifier), ci("As"))),
         field("type", $._type)
       ),
-    as_clause: ($) => seq(ci("As"), field("declared_type", $._type)),
+
+    as_clause: ($) => seq(
+      ci("As"), 
+      field("declared_type", $._type)  // Just use _type, which already includes nullable_type
+    ),
 
     implements_member_clause: ($) =>
       seq(ci("Implements"), commaSep1($._name_reference)),
@@ -920,25 +933,29 @@ module.exports = grammar({
       seq(
         field("name", $.identifier),
         optional(choice(
-          // Array bounds specification (e.g., params(0) or params(10, 20))
+          // Array bounds specification
           seq("(", field("bounds", commaSep1($._expression)), ")"),
-          // Array rank specification (e.g., params() or params(,))
+          // Array rank specification
           $.array_rank_specifier
         )),
         optional(choice(
-          // Regular type declaration - this should handle nullable types
-          $.as_clause,
-          // "As New" pattern
+          // Regular type declaration with nullable support
           seq(
             ci("As"),
-            ci("New"),
-            field("type", choice(
+            field("declared_type", choice(
+              $.nullable_type,  // Put nullable_type first
               $._type,
-              // For parameterized types like List(Of T)
+              // "As New" pattern
               seq(
-                field("type_name", $.identifier),
-                optional($.type_argument_list),
-                optional($.argument_list)  // For constructor arguments
+                ci("New"),
+                field("type", choice(
+                  $._type,
+                  seq(
+                    field("type_name", $.identifier),
+                    optional($.type_argument_list),
+                    optional($.argument_list)
+                  )
+                ))
               )
             ))
           )
@@ -1204,6 +1221,12 @@ module.exports = grammar({
           )
         ),
         field("name", $.identifier),
+        optional(choice(
+          // Array parameter specification (e.g., values())
+          $.array_rank_specifier,
+          // Array bounds specification (e.g., values(10))
+          seq("(", field("bounds", commaSep1($._expression)), ")")
+        )),
         optional($.as_clause),
         optional(seq("=", field("default_value", $._expression)))
       ),
@@ -1253,12 +1276,15 @@ module.exports = grammar({
       seq(field("label", $.identifier), ":", optional($._statement)),
 
     declaration_statement: ($) =>
-      seq(
+      prec(1, seq(  // Add precedence
         optional(field("attributes", $.attribute_list)),
-        field("modifiers", repeat1($.local_declaration_modifier)),
+        field("modifiers", choice(
+          $.local_declaration_modifier,
+          repeat1($.local_declaration_modifier)
+        )),
         commaSep1($.variable_declarator),
         $._terminator
-      ),
+      )),
 
     expression_statement: ($) => seq($._expression, $._terminator),
 
@@ -1436,7 +1462,10 @@ module.exports = grammar({
         ci("With"),
         field("expression", $._expression),
         $._block_terminator,
-        field("body", repeat($._statement)),
+        field("body", repeat(choice(
+          $.declaration_statement,  // Allow declarations in With blocks
+          $._statement
+        ))),
         ci("End"),
         ci("With"),
         $._terminator
