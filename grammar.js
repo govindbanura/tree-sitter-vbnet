@@ -22,12 +22,13 @@ const PRECEDENCE = {
 module.exports = grammar({
   name: "vbnet",
   extras: $ => [
-  $.comment,
-  $.preprocessor_directive,
-  /[ \t\v\f]+/,
-  /\r?\n/,             // <- Support newlines (for implicit continuation)
-  /_[ \t]*\r?\n/,      // <- Explicit line continuation
-],
+    $.comment,
+    $.preprocessor_directive,
+    /[ \t\v\f]+/,
+    /\r?\n/,             // <- Support newlines (for implicit continuation)
+    /_[ \t]*\r?\n/,      // <- Explicit line continuation
+  ],
+
   supertypes: ($) => [
     $._declaration,
     $._type_member_declaration,
@@ -714,7 +715,12 @@ module.exports = grammar({
     array_type: ($) =>
       seq(field("element_type", $._type), $.array_rank_specifier),
     array_rank_specifier: ($) => seq("(", repeat(","), ")"),
-    nullable_type: ($) => seq(field("type", $._type), "?"),
+
+    nullable_type: ($) => prec.left(15, seq(
+      field("type", $._type),
+      token.immediate("?")  // Use token.immediate to ensure ? is attached
+    )),
+
     tuple_type: ($) => seq("(", commaSep2($.tuple_element), ")"),
     tuple_element: ($) =>
       seq(
@@ -920,7 +926,7 @@ module.exports = grammar({
           $.array_rank_specifier
         )),
         optional(choice(
-          // Regular type declaration
+          // Regular type declaration - this should handle nullable types
           $.as_clause,
           // "As New" pattern
           seq(
