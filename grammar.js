@@ -110,12 +110,15 @@ module.exports = grammar({
       seq(
         optional($.option_statements),
         repeat(choice(
-          prec(10, $.imports_statement),  // High precedence for imports
+          prec(10, $.imports_statement),
+          prec(10, $.global_attribute_section),
           $._declaration,
           $._statement,
           $._block_terminator
         ))
       ),
+
+
 
 
     option_statements: ($) => repeat1($.option_statement),
@@ -144,6 +147,22 @@ module.exports = grammar({
           )
         ),
         $._terminator
+      ),
+
+    global_attribute_section: ($) =>
+      seq(
+        "<",
+        field("target", $.attribute_target),
+        ":",
+        commaSep1($.attribute),
+        ">",
+        $._terminator
+      ),
+
+    attribute_target: ($) =>
+      choice(
+        ci("Assembly"),
+        ci("Module")
       ),
 
     _terminator: ($) =>
@@ -294,25 +313,25 @@ module.exports = grammar({
 
 
     _primary_expression: ($) =>
-  choice(
-    $._literal,
-    $.identifier,
-    $.parenthesized_expression,
-    $.invocation_expression,  // Remove precedence here
-    $.member_access_expression,  // Remove precedence here
-    $.array_access_expression,  // Remove precedence here
-    $.object_creation_expression,
-    $.array_creation_expression,
-    $.typeof_expression,
-    $.cast_expression,
-    $.me_expression,
-    $.mybase_expression,
-    $.myclass_expression,
-    $.if_expression,
-    $.with_expression,
-    $.anonymous_object_creation_expression,
-    $.with_member_access_expression
-  ),
+      choice(
+        $._literal,
+        $.identifier,
+        $.parenthesized_expression,
+        $.invocation_expression,  // Remove precedence here
+        $.member_access_expression,  // Remove precedence here
+        $.array_access_expression,  // Remove precedence here
+        $.object_creation_expression,
+        $.array_creation_expression,
+        $.typeof_expression,
+        $.cast_expression,
+        $.me_expression,
+        $.mybase_expression,
+        $.myclass_expression,
+        $.if_expression,
+        $.with_expression,
+        $.anonymous_object_creation_expression,
+        $.with_member_access_expression
+      ),
 
     parenthesized_expression: ($) => seq("(", $._expression, ")"),
 
@@ -341,13 +360,13 @@ module.exports = grammar({
     //   ),
 
     invocation_expression: ($) =>
-  prec(
-    PRECEDENCE.INVOCATION,
-    seq(
-      field("function", $._expression),
-      field("arguments", $.argument_list)
-    )
-  ),
+      prec(
+        PRECEDENCE.INVOCATION,
+        seq(
+          field("function", $._expression),
+          field("arguments", $.argument_list)
+        )
+      ),
 
     argument_list: ($) => seq("(", optional(commaSep1($._argument)), ")"),
 
@@ -357,15 +376,15 @@ module.exports = grammar({
     omitted_argument: ($) => token(prec(1, ",")),
 
     array_access_expression: ($) =>
-  prec(
-    PRECEDENCE.ARRAY_ACCESS,
-    seq(
-      field("array", $._expression),
-      "(",
-      field("indices", commaSep1($._expression)),
-      ")"
-    )
-  ),
+      prec(
+        PRECEDENCE.ARRAY_ACCESS,
+        seq(
+          field("array", $._expression),
+          "(",
+          field("indices", commaSep1($._expression)),
+          ")"
+        )
+      ),
 
     binary_expression: ($) =>
       choice(
