@@ -101,6 +101,8 @@ module.exports = grammar({
     [$._statement, $.with_statement],
     [$._type, $.as_clause],
     [$._primary_expression, $.array_access_expression],
+    [$.generic_invocation_expression, $.array_access_expression],
+    [$.invocation_expression, $.generic_invocation_expression],
   ],
 
   word: ($) => $._identifier_token,
@@ -317,9 +319,10 @@ module.exports = grammar({
         $._literal,
         $.identifier,
         $.parenthesized_expression,
-        $.invocation_expression,  // Remove precedence here
-        $.member_access_expression,  // Remove precedence here
-        $.array_access_expression,  // Remove precedence here
+        $.generic_invocation_expression,  // Add this before regular invocation
+        $.invocation_expression,
+        $.member_access_expression,
+        $.array_access_expression,
         $.object_creation_expression,
         $.array_creation_expression,
         $.typeof_expression,
@@ -331,6 +334,16 @@ module.exports = grammar({
         $.with_expression,
         $.anonymous_object_creation_expression,
         $.with_member_access_expression
+      ),
+
+    generic_invocation_expression: ($) =>
+      prec(
+        PRECEDENCE.INVOCATION + 1,  
+        seq(
+          field("function", $._expression),
+          field("type_arguments", $.type_argument_list),
+          field("arguments", $.argument_list)
+        )
       ),
 
     parenthesized_expression: ($) => seq("(", $._expression, ")"),
