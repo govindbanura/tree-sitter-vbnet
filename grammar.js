@@ -95,12 +95,12 @@ module.exports = grammar({
     [$.invocation_expression, $.array_access_expression],
     [$.assignment_statement, $.expression_statement],
     [$.member_access_expression, $.invocation_expression],
-    // New
     [$.simple_name, $.variable_declarator],
     [$.simple_name, $.generic_name, $.variable_declarator],
     [$.generic_name, $.variable_declarator],
     [$._statement, $.with_statement],
     [$._type, $.as_clause],
+    [$._primary_expression, $.array_access_expression],
   ],
 
   word: ($) => $._identifier_token,
@@ -292,46 +292,28 @@ module.exports = grammar({
         $.typeof_is_expression
       ),
 
-    // _primary_expression: ($) =>
-    //   choice(
-    //     $._literal,
-    //     $.identifier,
-    //     $.parenthesized_expression,
-    //     $.member_access_expression,
-    //     $.invocation_expression,
-    //     $.array_access_expression,
-    //     $.object_creation_expression,
-    //     $.array_creation_expression,
-    //     $.typeof_expression,
-    //     $.cast_expression,
-    //     $.me_expression,
-    //     $.mybase_expression,
-    //     $.myclass_expression,
-    //     $.if_expression,
-    //     $.with_expression,
-    //     $.anonymous_object_creation_expression,
-    //     $.with_member_access_expression
-    //   ),
+
     _primary_expression: ($) =>
-      choice(
-        $._literal,
-        $.identifier,
-        $.parenthesized_expression,
-        prec(PRECEDENCE.INVOCATION, $.invocation_expression),  // Give invocation high precedence
-        prec(PRECEDENCE.MEMBER_ACCESS, $.member_access_expression),
-        $.array_access_expression,
-        $.object_creation_expression,
-        $.array_creation_expression,
-        $.typeof_expression,
-        $.cast_expression,
-        $.me_expression,
-        $.mybase_expression,
-        $.myclass_expression,
-        $.if_expression,
-        $.with_expression,
-        $.anonymous_object_creation_expression,
-        $.with_member_access_expression
-      ),
+  choice(
+    $._literal,
+    $.identifier,
+    $.parenthesized_expression,
+    $.invocation_expression,  // Remove precedence here
+    $.member_access_expression,  // Remove precedence here
+    $.array_access_expression,  // Remove precedence here
+    $.object_creation_expression,
+    $.array_creation_expression,
+    $.typeof_expression,
+    $.cast_expression,
+    $.me_expression,
+    $.mybase_expression,
+    $.myclass_expression,
+    $.if_expression,
+    $.with_expression,
+    $.anonymous_object_creation_expression,
+    $.with_member_access_expression
+  ),
+
     parenthesized_expression: ($) => seq("(", $._expression, ")"),
 
     member_access_expression: ($) =>
@@ -359,36 +341,31 @@ module.exports = grammar({
     //   ),
 
     invocation_expression: ($) =>
-      prec.left(
-        PRECEDENCE.INVOCATION,
-        seq(
-          field("function", $._expression),  // Allow any expression as the function
-          field("arguments", $.argument_list)
-        )
-      ),
+  prec(
+    PRECEDENCE.INVOCATION,
+    seq(
+      field("function", $._expression),
+      field("arguments", $.argument_list)
+    )
+  ),
 
-    argument_list: ($) => seq("(", commaSep($._argument), ")"),
+    argument_list: ($) => seq("(", optional(commaSep1($._argument)), ")"),
 
     _argument: ($) =>
       choice($._expression, $.named_argument, $.omitted_argument),
 
-    omitted_argument: ($) => ",",
+    omitted_argument: ($) => token(prec(1, ",")),
 
     array_access_expression: ($) =>
-      prec.left(
-        PRECEDENCE.ARRAY_ACCESS,
-        seq(
-          field("array", choice(
-            $.identifier,
-            $.member_access_expression,
-            $.parenthesized_expression,
-            $.array_access_expression  // Allow chained array access
-          )),
-          "(",
-          field("indices", commaSep1($._expression)),
-          ")"
-        )
-      ),
+  prec(
+    PRECEDENCE.ARRAY_ACCESS,
+    seq(
+      field("array", $._expression),
+      "(",
+      field("indices", commaSep1($._expression)),
+      ")"
+    )
+  ),
 
     binary_expression: ($) =>
       choice(
@@ -738,8 +715,8 @@ module.exports = grammar({
       ),
 
     as_clause: ($) => seq(
-      ci("As"), 
-      field("declared_type", $._type)  // Just use _type, which already includes nullable_type
+      ci("As"),
+      field("declared_type", $._type)
     ),
 
     implements_member_clause: ($) =>
@@ -939,25 +916,18 @@ module.exports = grammar({
           $.array_rank_specifier
         )),
         optional(choice(
-          // Regular type declaration with nullable support
+          // Regular type declaration
+          $.as_clause,
+          // "As New" pattern - more flexible
           seq(
             ci("As"),
-            field("declared_type", choice(
-              $.nullable_type,  // Put nullable_type first
-              $._type,
-              // "As New" pattern
-              seq(
-                ci("New"),
-                field("type", choice(
-                  $._type,
-                  seq(
-                    field("type_name", $.identifier),
-                    optional($.type_argument_list),
-                    optional($.argument_list)
-                  )
-                ))
-              )
-            ))
+            ci("New"),
+            field("type", $._type),
+            optional(field("arguments", $.argument_list)),
+            optional(field("initializer", choice(
+              $.object_initializer,
+              $.collection_initializer
+            )))
           )
         )),
         optional(seq("=", field("initializer", $._expression)))
