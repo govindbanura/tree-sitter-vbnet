@@ -103,6 +103,7 @@ module.exports = grammar({
     [$._primary_expression, $.array_access_expression],
     [$.generic_invocation_expression, $.array_access_expression],
     [$.invocation_expression, $.generic_invocation_expression],
+    [$.dictionary_initializer, $.collection_initializer],
   ],
 
   word: ($) => $._identifier_token,
@@ -524,6 +525,7 @@ module.exports = grammar({
         )
       ),
     await_expression: ($) => seq(ci("Await"), $._expression),
+
     object_creation_expression: ($) =>
       seq(
         ci("New"),
@@ -532,10 +534,33 @@ module.exports = grammar({
         optional(
           field(
             "initializer",
-            choice($.object_initializer, $.collection_initializer)
+            choice(
+              $.object_initializer, 
+              $.collection_initializer,
+              $.dictionary_initializer  // Add this new option
+            )
           )
         )
       ),
+
+    dictionary_initializer: ($) =>
+      seq(
+        ci("From"), 
+        "{", 
+        commaSep($.dictionary_element), 
+        "}"
+      ),
+    
+    dictionary_element: ($) =>
+      seq(
+        "{",
+        field("key", $._expression),
+        ",",
+        field("value", $._expression),
+        "}"
+      ),
+
+
     object_initializer: ($) =>
       seq(ci("With"), "{", commaSep($.member_initializer), "}"),
     member_initializer: ($) =>
@@ -554,8 +579,11 @@ module.exports = grammar({
           field("value", $._expression)
         )
       ),
+
     collection_initializer: ($) =>
       seq(ci("From"), "{", commaSep($._expression), "}"),
+
+
     array_creation_expression: ($) =>
       seq(
         ci("New"),
