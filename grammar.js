@@ -25,8 +25,8 @@ module.exports = grammar({
     $.comment,
     $.preprocessor_directive,
     /[ \t\v\f]+/,
-    /\r?\n/,             // <- Support newlines (for implicit continuation)
-    /_[ \t]*\r?\n/,      // <- Explicit line continuation
+    /\r?\n/,
+    /_[ \t]*\r?\n/,
   ],
 
   supertypes: ($) => [
@@ -53,7 +53,6 @@ module.exports = grammar({
     [$._primary_expression, $.group_element],
     [$._terminator, $._block_terminator],
     [$.labeled_statement],
-    [$.omitted_argument, $.array_rank_specifier],
     [$.argument_list, $.array_rank_specifier],
     [$._argument, $.array_creation_expression],
     [$.object_creation_expression],
@@ -74,36 +73,20 @@ module.exports = grammar({
     [$._primary_expression, $.labeled_statement],
     [$._primary_expression, $.simple_name],
     [$._primary_expression, $.simple_name, $.generic_name],
-    [
-      $.field_declaration,
-      $.property_declaration,
-      $.method_declaration,
-      $.constructor_declaration,
-      $.event_declaration,
-      $.operator_declaration,
-    ],
-    [$.field_declaration, $.select_statement],
-    [$.field_declaration, $.try_statement],
-    [$.field_declaration, $.if_statement],
-    [$.field_declaration, $.while_statement],
-    [$.field_declaration, $.for_statement],
-    [$.field_declaration, $.with_statement],
-    [$.field_declaration, $.using_statement],
-    [$.field_declaration, $.do_statement],
-    [$.field_declaration, $.for_each_statement],
     [$._primary_expression, $.variable_declarator, $.labeled_statement],
-    [$.invocation_expression, $.array_access_expression],
-    [$.assignment_statement, $.expression_statement],
-    [$.member_access_expression, $.invocation_expression],
-    [$.simple_name, $.variable_declarator],
-    [$.simple_name, $.generic_name, $.variable_declarator],
-    [$.generic_name, $.variable_declarator],
     [$._statement, $.with_statement],
-    [$._type, $.as_clause],
-    [$._primary_expression, $.array_access_expression],
-    [$.generic_invocation_expression, $.array_access_expression],
-    [$.invocation_expression, $.generic_invocation_expression],
     [$.dictionary_initializer, $.collection_initializer],
+    [
+      $.class_declaration,
+      $.structure_declaration,
+      $.interface_declaration,
+      $.enum_declaration,
+      $.delegate_declaration,
+      $.interface_method_declaration,
+      $.interface_property_declaration,
+      $.interface_event_declaration,
+   
+    ],
   ],
 
   word: ($) => $._identifier_token,
@@ -115,13 +98,18 @@ module.exports = grammar({
         repeat(choice(
           prec(10, $.imports_statement),
           prec(10, $.global_attribute_section),
+          prec(10, $.file_attribute_section),
           $._declaration,
           $._statement,
           $._block_terminator
         ))
       ),
 
-
+    file_attribute_section: ($) =>
+      seq(
+        $.attribute_list,
+        $._terminator
+      ),
 
 
     option_statements: ($) => repeat1($.option_statement),
@@ -175,7 +163,6 @@ module.exports = grammar({
 
     _eof: ($) => token(prec(-10, "$")),
 
-    // _identifier_token: $ => /[a-zA-Z_][a-zA-Z0-9_]*/,
     _identifier_token: ($) => token(prec(-1, /[a-zA-Z_][a-zA-Z0-9_]*/)),
 
     identifier: ($) =>
@@ -278,11 +265,6 @@ module.exports = grammar({
     local_declaration_modifier: ($) =>
       choice(ci("Dim"), ci("Const"), ci("Static")),
 
-    // modifiers: $ => choice(
-    //   $.member_modifier,
-    //   prec.left(1, seq($.modifiers, $.member_modifier))
-    // ),
-
     attribute_list: ($) => seq("<", commaSep1($.attribute), ">"),
 
     attribute: ($) =>
@@ -358,20 +340,6 @@ module.exports = grammar({
           field("member", $.identifier)
         )
       ),
-
-    // invocation_expression: ($) =>
-    //   prec.left(
-    //     PRECEDENCE.INVOCATION,
-    //     seq(
-    //       field("function", choice(
-    //         $.identifier,
-    //         $.member_access_expression,
-    //         $.parenthesized_expression,
-    //         $.invocation_expression
-    //       )),
-    //       field("arguments", $.argument_list)
-    //     )
-    //   ),
 
     invocation_expression: ($) =>
       prec(
@@ -819,8 +787,8 @@ module.exports = grammar({
 
     class_declaration: ($) =>
       seq(
-        optional(field("attributes", $.attribute_list)),
-        optional(field("modifiers", repeat1($.member_modifier))), // Changed
+        repeat(field("attributes", $.attribute_list)),  // Allow multiple attribute lists
+        optional(field("modifiers", repeat1($.member_modifier))),
         ci("Class"),
         field("name", $.identifier),
         optional(field("type_parameters", $.type_parameter_list)),
@@ -833,8 +801,8 @@ module.exports = grammar({
 
     structure_declaration: ($) =>
       seq(
-        optional(field("attributes", $.attribute_list)),
-        optional(field("modifiers", repeat1($.member_modifier))), // Changed
+        repeat(field("attributes", $.attribute_list)),  // Change from optional to repeat
+        optional(field("modifiers", repeat1($.member_modifier))),
         ci("Structure"),
         field("name", $.identifier),
         optional(field("type_parameters", $.type_parameter_list)),
@@ -847,8 +815,8 @@ module.exports = grammar({
 
     interface_declaration: ($) =>
       seq(
-        optional(field("attributes", $.attribute_list)),
-        optional(field("modifiers", repeat1($.member_modifier))), // Changed
+        repeat(field("attributes", $.attribute_list)),  // Change from optional to repeat
+        optional(field("modifiers", repeat1($.member_modifier))),
         ci("Interface"),
         field("name", $.identifier),
         optional(field("type_parameters", $.type_parameter_list)),
@@ -861,8 +829,8 @@ module.exports = grammar({
 
     module_declaration: ($) =>
       seq(
-        optional(field("attributes", $.attribute_list)),
-        optional(field("modifiers", repeat1($.member_modifier))), // Changed
+        repeat(field("attributes", $.attribute_list)),  // Change from optional to repeat
+        optional(field("modifiers", repeat1($.member_modifier))),
         ci("Module"),
         field("name", $.identifier),
         $._block_terminator,
@@ -874,8 +842,8 @@ module.exports = grammar({
 
     enum_declaration: ($) =>
       seq(
-        optional(field("attributes", $.attribute_list)),
-        optional(field("modifiers", repeat1($.member_modifier))), // Changed
+        repeat(field("attributes", $.attribute_list)),  // Change from optional to repeat
+        optional(field("modifiers", repeat1($.member_modifier))),
         ci("Enum"),
         field("name", $.identifier),
         optional($.as_clause),
@@ -896,8 +864,8 @@ module.exports = grammar({
 
     delegate_declaration: ($) =>
       seq(
-        optional(field("attributes", $.attribute_list)),
-        optional(field("modifiers", repeat1($.member_modifier))), // Changed
+        repeat(field("attributes", $.attribute_list)),  // Change from optional to repeat
+        optional(field("modifiers", repeat1($.member_modifier))),
         ci("Delegate"),
         choice(ci("Sub"), ci("Function")),
         field("name", $.identifier),
@@ -908,7 +876,6 @@ module.exports = grammar({
       ),
 
     // Type members
-    // Update _type_member_declaration to explicitly list statements with higher precedence
     _type_member_declaration: ($) =>
       choice(
         prec(-1, $.empty_statement),
@@ -978,7 +945,6 @@ module.exports = grammar({
         optional(choice(
           // Regular type declaration
           $.as_clause,
-          // "As New" pattern - more flexible
           seq(
             ci("As"),
             ci("New"),
@@ -1742,9 +1708,9 @@ module.exports = grammar({
     // Comments
     comment: ($) => token(prec(100, choice(
       // Single quote comment (including multiple quotes) - don't consume newline
-      seq(/'+[^\n\r]*/),
+      /'+[^\n\r]*/,
       // REM followed by whitespace - don't consume newline
-      seq(/[Rr][Ee][Mm][ \t][^\n\r]*/)
+      /[Rr][Ee][Mm][ \t][^\n\r]*/
     ))),
 
     // Preprocessor Directives
