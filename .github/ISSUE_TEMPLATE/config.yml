@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question or Discussion
+    url: https://github.com/govindbanura/tree-sitter-vbnet/discussions
+    about: Ask questions or discuss ideas in GitHub Discussions
+  - name: Tree-sitter Documentation
+    url: https://tree-sitter.github.io/tree-sitter/
+    about: General tree-sitter documentation and guides
