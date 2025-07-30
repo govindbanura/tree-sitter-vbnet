@@ -12,23 +12,23 @@ assignees: ''
 ## Code Sample
 *Minimal VB.NET code that demonstrates the issue.*
 
-[vbnet code block]
+```vbnet
 ' Paste your VB.NET code here
-[end code block]
+```
 
 ## Current Behavior
 *What the parser currently does with this code.*
 
-[output block]
+```output
 // Paste the current parse tree or error output
-[end output block]
+```
 
 ## Expected Behavior
 *What the correct parse tree should look like.*
 
-[output block]
+```output
 // Describe or show the expected parse tree
-[end output block]
+```
 
 ## Environment
 *Information about your setup.*
