@@ -1,0 +1,51 @@
+# CODEOWNERS file for tree-sitter-vbnet grammar repository
+# Default owner for all files
+* @govindbanura
+
+# Grammar definition files
+/grammar.js @govindbanura
+/grammar.json @govindbanura
+
+# Source files
+/src/ @govindbanura
+/src/scanner.c @govindbanura
+/src/scanner.cc @govindbanura
+/src/parser.c @govindbanura
+/src/tree_sitter/ @govindbanura
+
+# Bindings
+/bindings/ @govindbanura
+/bindings/node/ @govindbanura
+/bindings/rust/ @govindbanura
+/bindings/go/ @govindbanura
+/bindings/python/ @govindbanura
+
+# Test files
+/test/ @govindbanura
+/corpus/ @govindbanura
+*.txt @govindbanura
+
+# Queries
+/queries/ @govindbanura
+/queries/*.scm @govindbanura
+
+# Build and configuration
+/Cargo.toml @govindbanura
+/package.json @govindbanura
+/package-lock.json @govindbanura
+/pyproject.toml @govindbanura
+/setup.py @govindbanura
+/Makefile @govindbanura
+
+# CI/CD
+/.github/ @govindbanura
+/.github/workflows/ @govindbanura
+
+# Documentation
+/README.md @govindbanura
+/LICENSE @govindbanura
+/*.md @govindbanura
+
+# Examples
+/examples/ @govindbanura
+/examples/**/*.vb @govindbanura
